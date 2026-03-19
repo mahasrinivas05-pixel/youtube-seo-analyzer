@@ -28,17 +28,19 @@ def find_youtube_trends(keywords):
 # -------------------------------
 def title_recommender(keywords, power_words):
     main_kw = keywords[0].strip().title() if keywords else "Your Topic"
-    templates = [
-        f"{random.choice(power_words).title()} Trick: How to {main_kw} Fast!",
-        f"I Tried {main_kw} For 30 Days (Results SHOCKED Me)",
-        f"Why Most People FAIL at {main_kw}",
-        f"Stop Doing This When Learning {main_kw}",
-        f"The {random.choice(power_words)} Secret to {main_kw}",
-        f"How I Mastered {main_kw} in 7 Days",
-        f"{main_kw}: 5 Mistakes Everyone Makes",
-        f"Before You Start {main_kw}, Watch This"
+    
+    clean_templates = [
+        f"How to Learn {main_kw} Step by Step (Beginner Guide)",
+        f"{main_kw} Tutorial for Beginners | Full Guide 2026",
+        f"Top 5 {main_kw} Tips You Should Know",
+        f"Why Learning {main_kw} is Important in 2026",
+        f"{main_kw} Explained in Simple Way",
+        f"Best Way to Master {main_kw} Fast",
+        f"{main_kw} Mistakes You Must Avoid",
+        f"Complete {main_kw} Roadmap for Beginners"
     ]
-    return random.sample(templates, 3)
+    
+    return clean_templates[:3]
 
 # -------------------------------
 # CTR CALCULATOR
