@@ -1,114 +1,168 @@
 import streamlit as st
-import plotly.express as px
+import os
 import matplotlib.pyplot as plt
-from wordcloud import WordCloud
-import seo_engine as seo  # Importing your backend functions
+from dotenv import load_dotenv
 
-# --- Page Configuration ---
-st.set_page_config(page_title="AI YouTube SEO Analyzer", layout="wide")
+# --- 1. IMPORT YOUR ORIGINAL LOGIC ---
+try:
+    from main import generate_ai_content
+    from code import calculate_score, show_charts, parse_ai_output
+except ImportError:
+    st.error("Make sure main.py and code.py are in the same folder!")
 
-# --- Custom Header ---
-st.title("📹 AI Powered YouTube SEO Analyzer")
-st.markdown("### *For Beginner Creators to Master the Algorithm*")
-st.divider()
+load_dotenv()
 
-# --- Input Section ---
-with st.container():
-    col1, col2 = st.columns([1, 1])
+# --- 2. PROFESSIONAL PAGE CONFIG ---
+st.set_page_config(
+    page_title="ViralVision SEO Pro", 
+    page_icon="🎬", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS for a Professional Dashboard Look
+st.markdown("""
+    <style>
+    .main {
+        background-color: #0e1117;
+    }
+    div[data-testid="stMetricValue"] {
+        font-size: 28px;
+        color: #ff4b4b;
+    }
+    .stButton>button {
+        width: 100%;
+        border-radius: 8px;
+        height: 3em;
+        background-color: #ff4b4b;
+        color: white;
+        font-weight: bold;
+        border: none;
+    }
+    .stButton>button:hover {
+        background-color: #ff3333;
+        border: none;
+    }
+    div.stMetric {
+        background-color: #161b22;
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #30363d;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- 3. SIDEBAR BRANDING & INPUTS ---
+with st.sidebar:
+    st.title("🎬 ViralVision AI")
+    st.subheader("YouTube SEO Dashboard")
+    st.markdown("---")
     
-    with col1:
-        st.header("📋 Video Details")
-        title_input = st.text_input("Video Title", placeholder="Enter your title here...")
-        desc_input = st.text_area("Video Description", placeholder="Enter your description...", height=150)
-        
-    with col2:
-        st.header("🔑 SEO Keywords")
-        k_input = st.text_area("Target Keywords (comma separated)", 
-                               placeholder="Enter at least 5 keywords...", 
-                               help="Keywords help the AI understand your niche.")
-        analyze_btn = st.button("🚀 Analyze & Optimize")
-
-# --- Processing Logic ---
-if analyze_btn:
-    # Convert input string to list
-    keywords = [k.strip() for k in k_input.split(",") if k.strip()]
+    u_concept = st.text_input("Video Concept", placeholder="e.g. How to Bake a Cake")
+    u_keywords = st.text_area("Keywords (comma separated)", placeholder="recipe, baking, dessert")
+    u_title = st.text_input("Current Title")
+    u_desc = st.text_area("Current Description", height=100)
     
-    if len(keywords) < 5:
-        st.error("⚠️ Please enter at least 5 keywords for an accurate analysis.")
-    elif not title_input or not desc_input:
-        st.warning("⚠️ Please provide both a title and a description.")
-    else:
-        # 1. Call Backend Functions
-        results, feedback, reach, power_words = seo.vid_iq_checker(title_input, desc_input, keywords)
-        ctr = seo.calculate_ctr(title_input)
-        viral = seo.viral_score(title_input, ctr, reach)
-        
-        # 2. Optimization Logic
-        best_title, best_score = seo.optimize_title(keywords, power_words, title_input, reach)
-        
-        # 3. Trends and Recommendations
-        trends = seo.find_youtube_trends(keywords)
-        recs = seo.title_recommender(keywords, power_words)
+    st.markdown("---")
+    analyze_btn = st.button("🚀 ANALYZE & OPTIMIZE")
 
-        # --- Display Metrics ---
-        st.divider()
-        m1, m2, m3 = st.columns(3)
-        m1.metric("SEO Reach", f"{reach}%")
-        m2.metric("Predicted CTR", f"{ctr}%")
-        m3.metric("Viral Score", f"{viral}/100")
-
-        # --- Optimization Result ---
-        st.success(f"### 🎯 Best Optimized Title: **{best_title}**")
-        st.write(f"**Optimization Viral Score:** {best_score}/100")
-
-        # --- Visualizations ---
-        st.divider()
-        vis_col1, vis_col2 = st.columns(2)
-
-        with vis_col1:
-            st.subheader("📊 SEO Score Breakdown")
-            # Creating Plotly Bar Chart
-            fig = px.bar(
-                x=list(results.values()), 
-                y=list(results.keys()), 
-                orientation='h',
-                labels={'x': 'Score (out of 20)', 'y': 'Metric'},
-                color=list(results.values()),
-                color_continuous_scale='Reds'
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-        with vis_col2:
-            st.subheader("☁️ Keyword Word Cloud")
-            # Creating Word Cloud using Matplotlib
-            word_string = " ".join(keywords)
-            wc = WordCloud(width=800, height=400, background_color='white', colormap='Reds').generate(word_string)
-            
-            fig_wc, ax = plt.subplots()
-            ax.imshow(wc, interpolation='bilinear')
-            ax.axis('off')
-            st.pyplot(fig_wc)
-
-        # --- Suggestions & Content Ideas ---
-        st.divider()
-        inf_col1, inf_col2 = st.columns(2)
-
-        with inf_col1:
-            st.subheader("💡 Improvement Suggestions")
-            for item in feedback:
-                st.write(f"- {item}")
-            
-            st.subheader("🔥 Recommended Titles")
-            for r in recs:
-                st.code(r)
-
-        with inf_col2:
-            st.subheader("📈 Trending Topics (Velocity)")
-            # Display Trends
-            for t in trends:
-                st.write(f"**{t['topic']}**")
-                st.progress(t['velocity'] / 100)
-                st.caption(f"Velocity: {t['velocity']}%")
+# --- 4. MAIN DASHBOARD ---
+if not analyze_btn:
+    st.title("Welcome to ViralVision Pro")
+    st.markdown("### Elevate your YouTube Content with AI-Driven SEO.")
+    st.info("👈 Enter your video details on the left to generate your Optimization Report.")
+    
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown("### 📊 SEO Scoring")
+        st.write("Instant feedback on your current metadata using your custom scoring algorithm.")
+    with c2:
+        st.markdown("### 🤖 AI Brainstorming")
+        st.write("Generates high-CTR titles and story-driven descriptions using Gemini.")
+    with c3:
+        st.markdown("### 📥 One-Click Reports")
+        st.write("Export your optimized metadata directly to a report file.")
 
 else:
-    st.info("Fill in your video details and click 'Analyze' to begin.")
+    # --- PHASE A: ANALYSIS (From code.py) ---
+    result = calculate_score(u_keywords, u_title, u_desc)
+    
+    st.title("📈 SEO Performance Analysis")
+    
+    m1, m2, m3, m4 = st.columns(4)
+    with m1: st.metric("Overall Score", f"{result['Final Score']}/100")
+    with m2: st.metric("Title SEO", f"{result['Title Score']}/30")
+    with m3: st.metric("Hook Strength", f"{result['Hook Score']}/20")
+    with m4: st.metric("Curiosity Gap", f"{result['Curiosity Score']}/20")
+
+    col_chart, col_ai = st.columns([1, 1.5], gap="large")
+    
+    with col_chart:
+        st.subheader("Detailed Breakdown")
+        show_charts(result)
+        st.pyplot(plt.gcf())
+        plt.clf()
+
+    # --- PHASE B: AI OPTIMIZATION & REPORT ---
+    with col_ai:
+        st.subheader("⚡ AI Optimized Content")
+        with st.spinner("AI is crafting your viral metadata..."):
+            ai_output = generate_ai_content(u_concept, u_keywords, u_title, u_desc)
+            
+            if ai_output:
+                titles, ai_desc, hashtags = parse_ai_output(ai_output)
+                
+                # Display Results
+                tab1, tab2, tab3 = st.tabs(["Option 1", "Option 2", "Option 3"])
+                for i, t in enumerate(titles[:3]):
+                    if i == 0: tab1.success(f"**Suggested Title:**\n\n{t}")
+                    if i == 1: tab2.success(f"**Suggested Title:**\n\n{t}")
+                    if i == 2: tab3.success(f"**Suggested Title:**\n\n{t}")
+
+                st.markdown("#### ✨ Optimized Description")
+                st.info(ai_desc if ai_desc else "Description generation failed.")
+                
+                st.markdown("#### #️⃣ Generated Hashtags")
+                st.code(hashtags if hashtags else "#youtube #seo #viral")
+
+                # --- 5. REPORT GENERATION SECTION ---
+                st.divider()
+                st.subheader("📄 Export Your SEO Report")
+                
+                # Create the report content string
+                full_report = f"""
+VIRALVISION SEO OPTIMIZATION REPORT
+===================================
+VIDEO CONCEPT: {u_concept}
+FINAL SEO SCORE: {result['Final Score']}/100
+
+SCORES BREAKDOWN:
+- Title Score: {result['Title Score']}/30
+- Description Score: {result['Description Score']}/30
+- Hook Score: {result['Hook Score']}/20
+- Curiosity Score: {result['Curiosity Score']}/20
+
+AI SUGGESTED TITLES:
+-------------------
+{chr(10).join(titles)}
+
+OPTIMIZED DESCRIPTION:
+----------------------
+{ai_desc}
+
+RECOMMENDED HASHTAGS:
+---------------------
+{hashtags}
+                """
+                
+                # The actual download button
+                st.download_button(
+                    label="📥 Download Full SEO Report (.txt)",
+                    data=full_report,
+                    file_name=f"SEO_Report_{u_concept.replace(' ', '_')}.txt",
+                    mime="text/plain",
+                    use_container_width=True,
+                    key="report_download_final"
+                )
+            else:
+                st.error("AI failed to generate content. Please check your API key.")
