@@ -1,4 +1,5 @@
 streamlit
-plotly
+google-genai
+python-dotenv
 matplotlib
-wordcloud
+numpy
